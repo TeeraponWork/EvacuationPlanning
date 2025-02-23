@@ -113,6 +113,15 @@ namespace EvacuationPlanning.Core.Services.Plan
                     });
                 }
                 _logger.LogInformation("จบกระบวน ดูสถานะแผนข้อมูลอพยพ");
+
+
+                result.Add(new StatusEvacuationDto
+                {
+                    LastVehicleUsed = "testA",
+                    RemainingPeople = 76,
+                    TotalEvacuated = 90,
+                    ZoneID = Guid.Empty
+                });
                 return ResultResponseModel<object>.SuccessResponse(result);
             }
             catch (Exception ex)
