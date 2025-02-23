@@ -50,17 +50,17 @@ namespace EvacuationPlanning.Core.Services.Plan
                     {
                         var data = new CoordinateModel()
                         {
-                            VehiclesId = itemVehicles.VehiclesId,
+                            VehiclesId = itemVehicles.VehicleId,
                             ZoneID = itemEvacuation.ZoneID,
                             StartLatitude = itemEvacuation.Latitude,
                             StartLongitude = itemEvacuation.Longitude,
                             EndLatitude = itemVehicles.Latitude,
                             EndLongitude = itemVehicles.Longitude,
                         };
-                        _logger.LogInformation($"เริ่มต้นกระบวน คำนวณระยะห่างระหว่างยานพาหนะ: {itemVehicles.VehiclesId} กับพื้นที่อพยพ: {itemEvacuation.ZoneID}");
+                        _logger.LogInformation($"เริ่มต้นกระบวน คำนวณระยะห่างระหว่างยานพาหนะ: {itemVehicles.VehicleId} กับพื้นที่อพยพ: {itemEvacuation.ZoneID}");
                         var resultDistanceCalculation = _planCalculationServices.ProcessEvacuationDistances(data);
                         resultDistance.Add(resultDistanceCalculation);
-                        _logger.LogInformation($"จบกระบวน คำนวณระยะห่างระหว่างยานพาหนะ: {itemVehicles.VehiclesId} กับพื้นที่อพยพ: {itemEvacuation.ZoneID}");
+                        _logger.LogInformation($"จบกระบวน คำนวณระยะห่างระหว่างยานพาหนะ: {itemVehicles.VehicleId} กับพื้นที่อพยพ: {itemEvacuation.ZoneID}");
                     }
                 }
 
@@ -78,9 +78,9 @@ namespace EvacuationPlanning.Core.Services.Plan
                         EvacuatedPeople = 0,
                         PeopleTotal = item.Vehicles.Sum(v => v.NumberPeople),
                         RemainingPeople = item.Vehicles.Sum(v => v.NumberPeople),
-                        UsedVehiclesId = null
                     }).ToList();
-                    await _planRepository.InsertPlan(resultInsert);
+
+                    await _planRepository.AddOrUpdate(resultInsert);
                     _logger.LogInformation($"จบกระบวน นำเข้าข้อมูลแผนอพยพ");
 
                     return ResultResponseModel<object>.SuccessResponse(result);
@@ -101,7 +101,9 @@ namespace EvacuationPlanning.Core.Services.Plan
                 var result = new List<StatusEvacuationDto>();
 
                 _logger.LogInformation("เริ่มต้นกระบวน ค้นหาแผนข้อมูลอพยพในฐานข้อมูล");
-                var data = await _planRepository.ViewPlan();
+                var data = await _planRepository.GetPlan("evacuationPlan");
+                if(data == null) return ResultResponseModel<object>.SuccessResponse(result);
+
                 foreach (var item in data)
                 {
                     result.Add(new StatusEvacuationDto
@@ -136,7 +138,7 @@ namespace EvacuationPlanning.Core.Services.Plan
                 else 
                 {
                     _logger.LogInformation($"อับเดจสถานะแผนข้อมูลอพยพผิดผลาด: {result.ErrorMessage}");
-                    return ResultResponseModel<object>.ErrorResponse("เกิดข้อผิดผลาด");
+                    return ResultResponseModel<object>.ErrorResponse($"เกิดข้อผิดผลาด: {result.ErrorMessage}");
                 }
             }
             catch (Exception ex)
@@ -152,7 +154,7 @@ namespace EvacuationPlanning.Core.Services.Plan
             try
             {
                 _logger.LogInformation("เริ่มต้นกระบวนลบข้อมูล Plan,EvacuationZones,Vehicles");
-                await _planRepository.DeletePlan();
+                await _planRepository.DeletePlan("evacuationPlan");
                 await _evacuationZonesRepository.DeleteAll();
                 await _vehiclesRepository.DeleteAll();
                 _logger.LogInformation("จบกระบวนลบข้อมูล Plan,EvacuationZones,Vehicles");
