@@ -2,9 +2,9 @@
 {
     public class CalculationEta
     {
-        public double ComputeEta(double distance, double speed)
+        public int ComputeEta(double distance, double speed)
         {
-            return (distance / speed) * 60;
+            return (int)Math.Round((distance / speed) * 60);
         }
     }
 }
