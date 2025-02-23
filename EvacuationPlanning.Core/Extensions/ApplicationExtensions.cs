@@ -13,6 +13,7 @@ using FluentValidation.AspNetCore;
 using EvacuationPlanning.Core.Dto.EvacuationZones;
 using EvacuationPlanning.Core.Dto.Plan;
 using EvacuationPlanning.Core.Dto.Vehicles;
+using EvacuationPlanning.Core.Interfaces.IRedis;
 
 namespace EvacuationPlanning.Core.Extensions
 {
@@ -21,10 +22,9 @@ namespace EvacuationPlanning.Core.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
         {
             services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-            services.AddValidatorsFromAssemblyContaining<EvacuationZonesDto>();
+            services.AddValidatorsFromAssemblyContaining<EvacuationZonesRequestDto>();
             services.AddValidatorsFromAssemblyContaining<UpdatePlanDto>();
-            services.AddValidatorsFromAssemblyContaining<VehiclesDto>();
-
+            services.AddValidatorsFromAssemblyContaining<VehicleRequestDto>();
 
             // Services
             services.AddScoped<IEvacuationZonesServices, EvacuationZonesServices>();

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EvacuationPlanning.Core.Dto.Vehicles
+﻿namespace EvacuationPlanning.Core.Dto.Vehicles
 {
-    public class VehiclesDto
+    public class VehicleRequestDto
     {
+        public string VehicleId { get; set; }
         public string Type { get; set; }
         public int Capacity { get; set; }
         public double Latitude { get; set; }

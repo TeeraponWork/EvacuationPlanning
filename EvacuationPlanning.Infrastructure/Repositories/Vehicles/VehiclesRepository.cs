@@ -1,70 +1,74 @@
 ﻿using EvacuationPlanning.Core.Entities.Vehicles;
+using EvacuationPlanning.Core.Interfaces.IRedis;
 using EvacuationPlanning.Core.Interfaces.IRepo.IVehicles;
 
 namespace EvacuationPlanning.Infrastructure.Repositories.Vehicles
 {
     public class VehiclesRepository : IVehiclesRepository
     {
+        private readonly IRedisService _redisService;
+        public VehiclesRepository(IRedisService redisService)
+        {
+            _redisService = redisService;
+        }
         private static List<VehiclesEntities> DataVehicles = new List<VehiclesEntities>();
 
-        public Task<bool> Add(VehiclesEntities request)
+        public async Task<bool> Add(VehiclesEntities request)
         {
-            if (request == null) return Task.FromResult(false);
-
-            var data = new VehiclesEntities()
+            string vehicleKey = $"vehicle:{request.VehicleId}";
+            var vehicleData = new Dictionary<string, string>
             {
-                VehiclesId = Guid.NewGuid(),
-                Speed = request.Speed,
-                Capacity = request.Capacity,
-                Type = request.Type,
-                Latitude = request.Latitude,
-                Longitude = request.Longitude,
+                { "Latitude", request.Latitude.ToString() },
+                { "Longitude", request.Longitude.ToString() },
+                { "Type", request.Type },
+                { "Capacity", request.Capacity.ToString() },
+                { "Speed", request.Speed.ToString() }
             };
 
-            DataVehicles.Add(data);
-
-            return Task.FromResult(true);
+            return await _redisService.SetHashAsync(vehicleKey, vehicleData, TimeSpan.FromHours(1));
         }
-
-        public async Task DeleteAll()
+        public async Task<bool> AddSet(string vehicleId)
         {
-            DataVehicles.Clear();
+            return await _redisService.AddToSetAsync("vehicleAll", vehicleId);
         }
-
-        public Task<List<VehiclesEntities>> GetAll()
+        public async Task<List<VehiclesEntities>> GetAll()
         {
-            var data = new List<VehiclesEntities>
+            var result = new List<VehiclesEntities>();
+            var vehicleId = await _redisService.GetSetMemberAsync("vehicleAll");
+            if(vehicleId.Count == 0) return result;
+
+            foreach (var item in vehicleId)
             {
-                new VehiclesEntities
-                {
-                    VehiclesId = new Guid("11111111-1111-1111-1111-111111111111"),
-                    Type = "Bus",
-                    Capacity = 40,
-                    Latitude = 13.7563,
-                    Longitude = 100.5018,
-                    Speed = 60
-                },
-                new VehiclesEntities
-                {
-                    VehiclesId = new Guid("22222222-2222-2222-2222-222222222222"),
-                    Type = "Van",
-                    Capacity = 12,
-                    Latitude = 13.7450,
-                    Longitude = 100.4934,
-                    Speed = 50
-                },
-                new VehiclesEntities
-                {
-                    VehiclesId = new Guid("33333333-3333-3333-3333-333333333333"),
-                    Type = "Boat",
-                    Capacity = 30,
-                    Latitude = 13.7300,
-                    Longitude = 100.5000,
-                    Speed = 40
-                }
-            };
-            return Task.FromResult(data);
+                var data = await GetById(item);
+                if (data == null) continue; 
+                result.Add(data);
+            }
+            return result;            
+        }
+        public async Task<VehiclesEntities> GetById(string vehicleId)
+        {
+            string vehicleKey = $"vehicle:{vehicleId}";
+            var data = await _redisService.GetHashAsync(vehicleKey);
+            if (data.Count == 0) return null;
 
+            return new VehiclesEntities
+            {
+                VehicleId = vehicleId,
+                Latitude = double.Parse(data["Latitude"]),
+                Longitude = double.Parse(data["Longitude"]),
+                Type = data["Type"],
+                Capacity = int.Parse(data["Capacity"]),
+                Speed = int.Parse(data["Speed"])
+            };
+        }
+        public async Task<bool> DeleteAll()
+        {
+            var dataVehicles = await GetAll();
+            foreach (var item in dataVehicles)
+            {
+                await _redisService.DeleteAsync($"vehicle:{item.VehicleId}");
+            }
+            return await _redisService.DeleteAsync("vehicleAll");
         }
     }
 }

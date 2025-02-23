@@ -15,7 +15,7 @@ namespace EvacuationPlanning.Controllers.vehicles
         }
 
         [HttpPost(Name = "AddVehicles")]
-        public async Task<IActionResult> Add(VehiclesDto request)
+        public async Task<IActionResult> Add(VehicleRequestDto request)
         {
             try
             {

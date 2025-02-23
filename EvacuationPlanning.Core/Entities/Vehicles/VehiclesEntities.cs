@@ -2,7 +2,7 @@
 {
     public class VehiclesEntities
     {
-        public Guid VehiclesId { get; set; }
+        public string VehicleId { get; set; }
         public string Type { get; set; }
         public int Capacity { get; set; }
         public double Latitude { get; set; }

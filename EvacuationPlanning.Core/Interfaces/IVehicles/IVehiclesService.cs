@@ -6,6 +6,6 @@ namespace EvacuationPlanning.Core.Interfaces.IVehicles
 {
     public interface IVehiclesService
     {
-        Task<ResultResponseModel<object>> Add(VehiclesDto request);
+        Task<ResultResponseModel<object>> Add(VehicleRequestDto request);
     }
 }

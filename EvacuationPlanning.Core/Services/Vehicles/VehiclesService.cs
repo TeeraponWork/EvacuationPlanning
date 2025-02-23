@@ -2,8 +2,8 @@
 using EvacuationPlanning.Core.Entities.Vehicles;
 using EvacuationPlanning.Core.Interfaces.IRepo.IVehicles;
 using EvacuationPlanning.Core.Interfaces.IVehicles;
+using EvacuationPlanning.Core.Model.Location;
 using EvacuationPlanning.Core.Model.Response;
-using EvacuationPlanning.Core.Services.Plan;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
@@ -11,10 +11,10 @@ namespace EvacuationPlanning.Core.Services.Vehicles
 {
     public class VehiclesService : IVehiclesService
     {
-        private readonly IValidator<VehiclesDto> _validator;
+        private readonly IValidator<VehicleRequestDto> _validator;
         private readonly IVehiclesRepository _vehiclesRepository;
         private readonly ILogger<VehiclesService> _logger;
-        public VehiclesService(IValidator<VehiclesDto> validator, 
+        public VehiclesService(IValidator<VehicleRequestDto> validator,
             IVehiclesRepository vehiclesRepository,
             ILogger<VehiclesService> logger)
         {
@@ -22,7 +22,7 @@ namespace EvacuationPlanning.Core.Services.Vehicles
             _vehiclesRepository = vehiclesRepository;
             _logger = logger;
         }
-        public async Task<ResultResponseModel<object>> Add(VehiclesDto request)
+        public async Task<ResultResponseModel<object>> Add(VehicleRequestDto request)
         {
             _logger.LogInformation("เริ่มต้นกระบวนการเพิ่มยานพาหนะ");
             try
@@ -43,18 +43,23 @@ namespace EvacuationPlanning.Core.Services.Vehicles
                     Type = request.Type,
                     Capacity = request.Capacity,
                     Speed = request.Speed,
+                    VehicleId = request.VehicleId
                 };
-                var result = await _vehiclesRepository.Add(requestData);
 
+                await _vehiclesRepository.Add(requestData);
+                await _vehiclesRepository.AddSet(requestData.VehicleId.ToString());
+                var data = await _vehiclesRepository.GetAll();
+
+                var result = data.Select(x => new VehicleResponseDto
+                {
+                    VehicleID = x.VehicleId,
+                    Capacity = x.Capacity,
+                    Type = x.Type,
+                    LocationCoordinates = new LocationModel { Latitude = x.Latitude, Longitude = x.Longitude },
+                    Speed = x.Speed,
+                }).ToList();
                 _logger.LogInformation("จบกระบวนการนำเข้าข้อมูล");
-                if (result)
-                {
-                    return ResultResponseModel<object>.SuccessResponse("บันทึกข้อมูลเรียบร้อย");
-                }
-                else
-                {
-                    return ResultResponseModel<object>.ErrorResponse("บันทึกข้อมูลไม่ได้: กรุณาลองอีกครั้ง");
-                }
+                return ResultResponseModel<object>.SuccessResponse(result);
             }
             catch (Exception ex)
             {
