@@ -2,7 +2,7 @@
 {
     public class EvacuationZonesEntities
     {
-        public Guid ZoneID { get; set; }
+        public string ZoneID { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public int NumberPeople { get; set; }

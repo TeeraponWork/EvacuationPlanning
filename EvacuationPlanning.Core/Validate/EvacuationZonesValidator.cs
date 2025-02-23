@@ -1,9 +1,10 @@
-﻿using EvacuationPlanning.Core.Dto.EvacuationZones;
+﻿using EvacuationPlanning.Core.Common.Enum;
+using EvacuationPlanning.Core.Dto.EvacuationZones;
 using FluentValidation;
 
 namespace EvacuationPlanning.Core.Validate
 {
-    public class EvacuationZonesValidator : AbstractValidator<EvacuationZonesDto>
+    public class EvacuationZonesValidator : AbstractValidator<EvacuationZonesRequestDto>
     {
         public EvacuationZonesValidator()
         {
@@ -17,7 +18,8 @@ namespace EvacuationPlanning.Core.Validate
                 .GreaterThan(0).WithMessage("กรุณากรอกค่า: จำนวนคนที่ต้องอพยพ");
 
             RuleFor(x => x.Level)
-                .IsInEnum().WithMessage("กรุณากรอกค่า: ระดับความเร่งด่วนที่ถูกต้อง");
+                .InclusiveBetween((int)UrgencyLevel.Low, (int)UrgencyLevel.High)
+                .WithMessage("กรุณากรอกค่าระดับความเร่งด่วนที่ถูกต้อง: 1 (Low) ถึง 5 (High)");
         }
     }
 }

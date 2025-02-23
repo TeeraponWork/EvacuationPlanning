@@ -5,6 +5,6 @@ namespace EvacuationPlanning.Core.Interfaces.IEvacuationZones
 {
     public interface IEvacuationZonesServices
     {
-        Task<ResultResponseModel<object>> Add(EvacuationZonesDto request);
+        Task<ResultResponseModel<object>> Add(EvacuationZonesRequestDto request);
     }
 }

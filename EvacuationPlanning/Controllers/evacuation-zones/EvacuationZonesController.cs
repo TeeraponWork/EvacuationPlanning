@@ -15,7 +15,7 @@ namespace EvacuationPlanning.Controllers.evacuation_zones
         }
 
         [HttpPost(Name = "AddEvacuation")]
-        public async Task<IActionResult> Add(EvacuationZonesDto request)
+        public async Task<IActionResult> Add(EvacuationZonesRequestDto request)
         {
             try
             {
