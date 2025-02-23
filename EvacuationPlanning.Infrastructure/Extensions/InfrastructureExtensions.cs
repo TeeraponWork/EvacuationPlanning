@@ -1,6 +1,8 @@
-﻿using EvacuationPlanning.Core.Interfaces.IRepo.IEvacuationZones;
+﻿using EvacuationPlanning.Core.Interfaces.IRedis;
+using EvacuationPlanning.Core.Interfaces.IRepo.IEvacuationZones;
 using EvacuationPlanning.Core.Interfaces.IRepo.IPlan;
 using EvacuationPlanning.Core.Interfaces.IRepo.IVehicles;
+using EvacuationPlanning.Infrastructure.Cache.Redis;
 using EvacuationPlanning.Infrastructure.Repositories.EvacuationDataZones;
 using EvacuationPlanning.Infrastructure.Repositories.Plan;
 using EvacuationPlanning.Infrastructure.Repositories.Vehicles;
@@ -19,6 +21,7 @@ namespace EvacuationPlanning.Infrastructure.Extensions
             services.AddScoped<IVehiclesRepository, VehiclesRepository>();
             services.AddScoped<IVehiclesRepository, VehiclesRepository>();
             services.AddScoped<IPlanRepository, PlanRepository>();
+            services.AddScoped<IRedisService, RedisService>();
 
             return services;
         }
