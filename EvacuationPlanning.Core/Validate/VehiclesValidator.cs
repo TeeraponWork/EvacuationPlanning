@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace EvacuationPlanning.Core.Validate
 {
-    public class VehiclesValidator : AbstractValidator<VehiclesDto>
+    public class VehiclesValidator : AbstractValidator<VehicleRequestDto>
     {
         public VehiclesValidator()
         {

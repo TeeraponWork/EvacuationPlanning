@@ -2,8 +2,8 @@
 {
     public class ResultDistanceModel
     {
-        public Guid ZoneID { get; set; }
-        public Guid VehiclesId { get; set; }
+        public string ZoneID { get; set; }
+        public string VehiclesId { get; set; }
         public double Distance { get; set; }
     }
 }

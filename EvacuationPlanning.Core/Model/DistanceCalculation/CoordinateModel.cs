@@ -2,8 +2,8 @@
 {
     public class CoordinateModel
     {
-        public Guid ZoneID { get; set; }
-        public Guid VehiclesId { get; set; }
+        public string ZoneID { get; set; }
+        public string VehiclesId { get; set; }
         public double StartLatitude { get; set; }
         public double StartLongitude { get; set; }
         public double EndLatitude { get; set; }
