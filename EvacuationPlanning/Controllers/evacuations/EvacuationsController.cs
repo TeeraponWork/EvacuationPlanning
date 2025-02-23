@@ -53,11 +53,11 @@ namespace EvacuationPlanning.Controllers.evacuations
             }
         }
         [HttpDelete("delete", Name = "delete")]
-        public async Task<IActionResult> Delete(UpdatePlanDto model)
+        public async Task<IActionResult> Delete()
         {
             try
             {
-                var result = await _planServices.UpdateEvacuation(model);
+                var result = await _planServices.DeleteEvacuation();
                 return Ok(result);
             }
             catch

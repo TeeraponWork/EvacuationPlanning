@@ -2,8 +2,8 @@
 using EvacuationPlanning.Core.Entities.EvacuationZones;
 using EvacuationPlanning.Core.Interfaces.IEvacuationZones;
 using EvacuationPlanning.Core.Interfaces.IRepo.IEvacuationZones;
+using EvacuationPlanning.Core.Model.Location;
 using EvacuationPlanning.Core.Model.Response;
-using EvacuationPlanning.Core.Services.Plan;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +12,10 @@ namespace EvacuationPlanning.Core.Services.EvacuationZones
     public class EvacuationZonesServices : IEvacuationZonesServices
     {
         private readonly IEvacuationZonesRepository _evacuationZonesRepository;
-        private readonly IValidator<EvacuationZonesDto> _validator;
+        private readonly IValidator<EvacuationZonesRequestDto> _validator;
         private readonly ILogger<EvacuationZonesServices> _logger;
         public EvacuationZonesServices(IEvacuationZonesRepository evacuationZonesRepository,
-            IValidator<EvacuationZonesDto> validator,
+            IValidator<EvacuationZonesRequestDto> validator,
             ILogger<EvacuationZonesServices> logger
             )
         {
@@ -24,9 +24,9 @@ namespace EvacuationPlanning.Core.Services.EvacuationZones
             _logger = logger;
         }
 
-        public async Task<ResultResponseModel<object>> Add(EvacuationZonesDto request)
+        public async Task<ResultResponseModel<object>> Add(EvacuationZonesRequestDto request)
         {
-            _logger.LogInformation("เริ่มต้นกระบวนการวางแผนการอพยพ");
+            _logger.LogInformation("เริ่มต้นกระบวนการเพิ่มแผนการอพยพ");
             try
             {
                 _logger.LogInformation("เริ่มกระบวนการตรวจสอบข้อมูล");
@@ -43,24 +43,31 @@ namespace EvacuationPlanning.Core.Services.EvacuationZones
                     Latitude = request.Latitude,
                     Longitude = request.Longitude,
                     NumberPeople = request.NumberPeople,
-                    Level = request.Level
+                    Level = request.Level,
+                    ZoneID = request.ZoneID,
                 };
-                var result = await _evacuationZonesRepository.Add(requestData);
+
+                await _evacuationZonesRepository.Add(requestData);
+                await _evacuationZonesRepository.AddSet(requestData.ZoneID.ToString());
                 _logger.LogInformation("จบกระบวนการนำเข้าข้อมูล");
 
-                if (result)
+                _logger.LogInformation("เริ่มต้นกระบวนดึงแผนการอพยพ");
+                var data = await _evacuationZonesRepository.GetAll();
+                var result = data.Select(x => new EvacuationZonesResponseDto
                 {
-                    return ResultResponseModel<object>.SuccessResponse("บันทึกข้อมูลเรียบร้อย");
-                }
-                else
-                {
-                    return ResultResponseModel<object>.ErrorResponse("บันทึกข้อมูลไม่ได้: กรุณาลองอีกครั้ง");
-                }
+                    ZoneID = x.ZoneID,
+                    LocationCoordinates = new LocationModel { Latitude = x.Latitude, Longitude = x.Longitude },
+                    NumberofPeople = x.NumberPeople,
+                    UrgencyLevel = x.Level
+                }).ToList();
+
+                _logger.LogInformation("จบกระบวนดึงแผนการอพยพ");
+                return ResultResponseModel<object>.SuccessResponse(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"ระบบทำงานผิดผลาด: {ex.Message}");
-                return ResultResponseModel<object>.ExceptionResponse($"ระบบทำงานผิดผลาด: { ex.Message}");
+                return ResultResponseModel<object>.ExceptionResponse($"ระบบทำงานผิดผลาด: {ex.Message}");
             }
         }
     }

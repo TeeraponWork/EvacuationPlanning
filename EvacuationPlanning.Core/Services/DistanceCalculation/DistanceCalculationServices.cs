@@ -11,7 +11,7 @@ namespace EvacuationPlanning.Core.Services.DistanceCalculationServices
         {
             _logger = logger;
         }
-
+        //ref:https://www.geeksforgeeks.org/haversine-formula-to-find-distance-between-two-points-on-a-sphere/
         public double CalculationDistance(CoordinateModel data)
         {
             _logger.LogInformation("เริ่มต้นกระบวนแปลง Longitude,Latitude InRadians");
@@ -37,9 +37,10 @@ namespace EvacuationPlanning.Core.Services.DistanceCalculationServices
             double r = 6371;
 
             _logger.LogInformation("จบกระบวนการ Haversine formula");
-            return (c * r);
-        }
 
+            double result = (c * r);
+            return result;
+        }
         public double ConvertDegreesToRadians(double degrees)
         {
             _logger.LogInformation("เริ่มต้นกระบวน Convert Degrees To Radians");

@@ -1,66 +1,70 @@
 ﻿using EvacuationPlanning.Core.Entities.EvacuationZones;
+using EvacuationPlanning.Core.Interfaces.IRedis;
 using EvacuationPlanning.Core.Interfaces.IRepo.IEvacuationZones;
 
 namespace EvacuationPlanning.Infrastructure.Repositories.EvacuationDataZones
 {
     public class EvacuationZonesRepository : IEvacuationZonesRepository
     {
-        private static List<EvacuationZonesEntities> DataEvacuationZones = new List<EvacuationZonesEntities>();
-
-        public Task<bool> Add(EvacuationZonesEntities request)
+        private readonly IRedisService _redisService;
+        public EvacuationZonesRepository(IRedisService redisService)
         {
-            if (request == null) return Task.FromResult(false);
-
-            var data = new EvacuationZonesEntities()
+            _redisService = redisService;
+        }
+        public async Task<bool> Add(EvacuationZonesEntities request)
+        {
+            string zoneKey = $"zone:{request.ZoneID}";
+            var zoneData = new Dictionary<string, string>
             {
-                ZoneID = Guid.NewGuid(),
-                NumberPeople = request.NumberPeople,
-                Longitude = request.Longitude,
-                Latitude = request.Latitude,
-                Level = request.Level
+                { "Latitude", request.Latitude.ToString() },
+                { "Longitude", request.Longitude.ToString() },
+                { "Level", request.Level.ToString() },
+                { "Capacity", request.NumberPeople.ToString() },
             };
 
-            DataEvacuationZones.Add(data);
-
-            return Task.FromResult(true);
+            return await _redisService.SetHashAsync(zoneKey, zoneData, TimeSpan.FromHours(1));
         }
+        public async Task<bool> AddSet(string zoneID)
+        {
+            return await _redisService.AddToSetAsync("zoneAll", zoneID);
+        }
+        public async Task<List<EvacuationZonesEntities>> GetAll()
+        {
+            var result = new List<EvacuationZonesEntities>();
+            var zoneId = await _redisService.GetSetMemberAsync("zoneAll");
+            if (zoneId.Count == 0) return result;
 
+            foreach (var item in zoneId)
+            {
+                var data = await GetById(item);
+                if (data == null) continue;
+                result.Add(data);
+            }
+            return result;
+        }
+        public async Task<EvacuationZonesEntities> GetById(string zoneId)
+        {
+            string zoneIdKey = $"zone:{zoneId}";
+            var data = await _redisService.GetHashAsync(zoneIdKey);
+            if (data.Count == 0) return null;
+
+            return new EvacuationZonesEntities
+            {
+                ZoneID = zoneId,
+                Latitude = double.Parse(data["Latitude"]),
+                Longitude = double.Parse(data["Longitude"]),
+                NumberPeople = int.Parse(data["Capacity"]),
+                Level = int.Parse(data["Level"]),
+            };
+        }
         public async Task<bool> DeleteAll()
         {
-            DataEvacuationZones.Clear();
-            return await Task.FromResult(true);
-        }
-
-        public Task<List<EvacuationZonesEntities>> GetAll()
-        {
-            var data = new List<EvacuationZonesEntities>
+            var dataZones = await GetAll();
+            foreach (var item in dataZones) 
             {
-                new EvacuationZonesEntities
-                {
-                    ZoneID = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                    Latitude = 13.7570,
-                    Longitude = 100.5020,
-                    NumberPeople = 50,
-                    Level = 5
-                },
-                new EvacuationZonesEntities
-                {
-                    ZoneID = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    Latitude = 13.7480,
-                    Longitude = 100.4950,
-                    NumberPeople = 30,
-                    Level = 4
-                },
-                new EvacuationZonesEntities
-                {
-                    ZoneID = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                    Latitude = 13.7400,
-                    Longitude = 100.4900,
-                    NumberPeople = 20,
-                    Level = 3
-                }
-            };
-            return Task.FromResult(data);
+                await _redisService.DeleteAsync($"zone:{item.ZoneID}");
+            }
+            return await _redisService.DeleteAsync("zoneAll");
         }
     }
 }
