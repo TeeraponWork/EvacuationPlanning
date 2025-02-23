@@ -1,40 +1,29 @@
 ﻿using EvacuationPlanning.Core.Entities.Plan;
+using EvacuationPlanning.Core.Interfaces.IRedis;
 using EvacuationPlanning.Core.Interfaces.IRepo.IPlan;
 
 namespace EvacuationPlanning.Infrastructure.Repositories.Plan
 {
     public class PlanRepository : IPlanRepository
     {
-        static List<PlanEntities> planEntities = new List<PlanEntities>();
-
-        public async Task DeletePlan()
+        private readonly IRedisService _redisService;
+        public PlanRepository(IRedisService redisService)
         {
-            planEntities.Clear();
+            _redisService = redisService;
         }
-
-        public async Task InsertPlan(List<PlanEntities> data)
+        public async Task<bool> AddOrUpdate(List<PlanEntities> request)
         {
-            foreach (var item in data)
-            {
-                planEntities.Add(item);
-            }
+            return await _redisService.SetJsonAsync("evacuationPlan", request, null);
         }
-
-        public async Task UpdatePlan(PlanEntities data)
+        public async Task<List<PlanEntities>?> GetPlan(string planId)
         {
-            var plan = planEntities.FirstOrDefault(x => x.ZoneID == data.ZoneID);
-            if (plan != null)
-            {
-                plan.EvacuatedPeople = data.EvacuatedPeople;
-                plan.UpdateDate = DateTime.Now;
-                plan.AssignedVehiclesId = data.AssignedVehiclesId;
-                plan.RemainingPeople = data.RemainingPeople;
-            }
+            var plan = await _redisService.GetJsonAsync<List<PlanEntities>>(planId);
+            return plan;
         }
-
-        public Task<List<PlanEntities>> ViewPlan()
+        public async Task<bool> DeletePlan(string planId)
         {
-            return Task.FromResult(planEntities);
+            var plan = await _redisService.DeleteAsync(planId);
+            return plan;
         }
     }
 }
