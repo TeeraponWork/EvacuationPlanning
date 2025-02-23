@@ -4,10 +4,8 @@ namespace EvacuationPlanning.Core.Interfaces.IRepo.IPlan
 {
     public interface IPlanRepository
     {
-        Task InsertPlan(List<PlanEntities> data);
-        Task<List<PlanEntities>> ViewPlan();
-        Task UpdatePlan(PlanEntities data);
-        Task DeletePlan();
-
+        Task<bool> AddOrUpdate(List<PlanEntities> request);
+        Task<List<PlanEntities>?> GetPlan(string planId);
+        Task<bool> DeletePlan(string planId);
     }
 }

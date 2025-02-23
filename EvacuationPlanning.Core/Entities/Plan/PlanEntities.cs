@@ -2,7 +2,7 @@
 {
     public class PlanEntities
     {
-        public Guid ZoneID { get; set; }
+        public string ZoneID { get; set; }
         public string AssignedVehiclesId { get; set; }
         public string UsedVehiclesId { get; set; } = null;
         public int PeopleTotal { get; set; }

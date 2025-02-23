@@ -71,19 +71,19 @@ namespace EvacuationPlanning.Core.Services.Plan
                 foreach (var item in evacuationVehicles)
                 {
                     _logger.LogInformation($"เริ่มต้นกระบวนการ สร้างวางแผนพาหนะ:{item.VehiclesId}");
-                    var dataByVehicles = dataVehiclesAll.Where(x => x.VehiclesId == item.VehiclesId).FirstOrDefault();
+                    var dataByVehicles = dataVehiclesAll.Where(x => x.VehicleId == item.VehiclesId).FirstOrDefault();
                     if (numberPeople != 0)
                     {
                         var data = new EvacuationPlanDto()
                         {
                             Eta = etaCalculator.ComputeEta(item.Distance, dataByVehicles.Speed),
                             NumberPeople = Math.Min(dataByVehicles.Capacity, numberPeople),
-                            VehicleID = dataByVehicles.VehiclesId,
+                            VehicleID = dataByVehicles.VehicleId,
                             ZoneID = item.ZoneID,
                         };
                         result.Add(data);
                         numberPeople -= data.NumberPeople;
-                        _logger.LogInformation($"สร้างวางแผนพาหนะ:{dataByVehicles.VehiclesId} ของ Zone: {item.ZoneID}");
+                        _logger.LogInformation($"สร้างวางแผนพาหนะ:{dataByVehicles.VehicleId} ของ Zone: {item.ZoneID}");
                     }
                 }
                 _logger.LogInformation($"จบกระบวนการ สร้างแผนอพยพ: {itemEvacuationZones.ZoneID}");
@@ -101,7 +101,7 @@ namespace EvacuationPlanning.Core.Services.Plan
                                    ZoneID = g.Key,
                                    Vehicles = g.Select(x => new EvacuationVehicleDto
                                    {
-                                       Eta = x.Eta,
+                                       Eta = $"{x.Eta} minutes" ,
                                        NumberPeople = x.NumberPeople,
                                        VehicleID = x.VehicleID,
                                    }).ToList()

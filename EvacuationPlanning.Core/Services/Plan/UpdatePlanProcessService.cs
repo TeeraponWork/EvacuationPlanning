@@ -36,7 +36,7 @@ namespace EvacuationPlanning.Core.Services.Plan
             _logger.LogInformation("เริ่มต้นกระบวนการ ดึงข้อมูล Vehicles EvacuationZones Plan");
             var dataVehicles = await _vehiclesRepository.GetAll();
             var dataEvacuationZones = await _evacuationZonesRepository.GetAll();
-            var dataPlan = await _planRepository.ViewPlan();
+            var dataPlan = await _planRepository.GetPlan("evacuationPlan");
             _logger.LogInformation("จบกระบวนการ ดึงข้อมูล Vehicles EvacuationZones Plan");
 
             _logger.LogInformation("เริ่มต้นกระบวนการ ตรวจสอบข้อมูล Validation");
@@ -50,22 +50,29 @@ namespace EvacuationPlanning.Core.Services.Plan
 
             _logger.LogInformation("เริ่มต้นกระบวนการ UpdatePlanProcess");
             var vehicleIdList = model.AssignedVehiclesId.Split(',').ToList();
-            var checkVehicles = dataVehicles.Where(x => vehicleIdList.Contains(x.VehiclesId.ToString())).ToList();
-            if (checkVehicles == null) ResultResponseModel<string>.ErrorResponse("กรุณาระบุ ยานพาหนะที่ใช้");
+            var checkVehicles = dataVehicles.Where(x => vehicleIdList.Contains(x.VehicleId.ToString())).ToList();
+            if (checkVehicles == null) return ResultResponseModel<string>.ErrorResponse("กรุณาระบุ ยานพาหนะที่ใช้");
             if (checkVehicles.Count != vehicleIdList.Count) ResultResponseModel<string>.ErrorResponse("กรุณาระบุ ยานพาหนะที่ใช้ให้ถูกต้อง");
 
-            int peopleLeftInZone = dataPlan.Where(x => x.ZoneID == model.ZoneID).Select(x => x.PeopleTotal).FirstOrDefault() - model.EvacuatedPeople;
-            var dataUpdate = new PlanEntities
+            if (dataPlan == null) return ResultResponseModel<string>.ErrorResponse("ไม่พบแผนที่อพยพ");
+            var dataPlanUpdate = dataPlan.Where(x => x.ZoneID == model.ZoneID).ToList();
+            if(dataPlanUpdate.Count == 0) return ResultResponseModel<string>.ErrorResponse("ไม่พบรหัส Plan Id");
+
+            int peopleLeftInZone = dataPlanUpdate.Select(x => x.PeopleTotal).FirstOrDefault() - model.EvacuatedPeople;
+            if (peopleLeftInZone < 0) return ResultResponseModel<string>.ErrorResponse("จำนวนคนอพยพที่เหลืออยู่ไม่สามารถติดลบได้");
+
+            var dataUpdate = dataPlan.Where(x => x.ZoneID == model.ZoneID).ToList();
+            dataUpdate.ForEach(x =>
             {
-                EvacuatedPeople = model.EvacuatedPeople,
-                AssignedVehiclesId = model.AssignedVehiclesId,
-                RemainingPeople = dataPlan.Where(x => x.ZoneID == model.ZoneID).Select(x => x.PeopleTotal).FirstOrDefault() - model.EvacuatedPeople,
-                ZoneID = model.ZoneID,
-            };
-            await _planRepository.UpdatePlan(dataUpdate);
+                x.EvacuatedPeople = model.EvacuatedPeople;
+                x.UsedVehiclesId = model.AssignedVehiclesId;
+                x.RemainingPeople = peopleLeftInZone;
+                x.UpdateDate = DateTime.Now;
+            });
+            await _planRepository.AddOrUpdate(dataPlan);
 
             _logger.LogInformation("จบกระบวนการ UpdatePlanProcess");
-            return ResultResponseModel<string>.ErrorResponse("อับเดจ ข้อมูล");
+            return ResultResponseModel<string>.SuccessResponse("อับเดจข้อมูล สำเร็จ");
         }
     }
 }
